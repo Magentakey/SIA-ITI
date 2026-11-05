@@ -3,49 +3,56 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SIA ITI') · SIA ITI</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/sia-t4.css') }}">
 </head>
-<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
-{{-- NOTE: layout sementara dari T4, mengikuti desain Dashboard Admin. Samakan dengan layout bersama bila sudah ada. --}}
-<header class="bg-[#1b2d55] text-white">
-    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div>
-            <div class="text-xl font-bold">SIA ITI</div>
-            <div class="text-xs text-slate-300">Sistem Informasi Akademik · Institut Teknologi Indonesia</div>
+<body>
+{{-- Layout sementara T4, mengikuti 00 Foundation (Gaya B). Ganti dengan layout bersama bila sudah ada. --}}
+@php
+    $role = trim($__env->yieldContent('role', 'mahasiswa'));
+    $modules = [
+        'mahasiswa' => ['Modul Mahasiswa', ['Beranda', 'KRS', 'Jadwal', 'Presensi', 'Nilai dan KHS', 'Materi dan Tugas', 'Profil'], url('/presensi')],
+        'dosen' => ['Modul Dosen', ['Beranda', 'Jadwal Mengajar', 'Kelas Diampu', 'Presensi', 'Nilai', 'Materi dan Tugas', 'Profil'], url('/presensi/dosen')],
+        'admin' => ['Modul BAAK / Admin akademik', ['Dashboard', 'Mahasiswa', 'Dosen', 'Mata Kuliah dan Kurikulum', 'Jadwal', 'Laporan Kehadiran'], url('/presensi/admin')],
+    ];
+    [$moduleTitle, $moduleItems, $presensiUrl] = $modules[$role] ?? $modules['mahasiswa'];
+@endphp
+<header class="topbar">
+    <div class="brand"><strong>SIA ITI</strong><span>Institut Teknologi Indonesia</span></div>
+    <div class="topbar-right">
+        <div class="period">
+            @include('presensi._icon', ['name' => 'calendar'])
+            <span>Periode</span> <b class="num">{{ config('t4dummy.periode') }}</b>
+            @include('presensi._badge', ['label' => 'Aktif', 'tone' => 'success'])
+            @include('presensi._icon', ['name' => 'caret-down'])
         </div>
-        <div class="text-sm text-slate-200">Ganjil 2026/2027</div>
+        <a class="iconbtn" href="#" aria-label="Bantuan">@include('presensi._icon', ['name' => 'question', 'size' => 20])</a>
+        <a class="iconbtn" href="#" aria-label="Notifikasi">@include('presensi._icon', ['name' => 'bell', 'size' => 20])</a>
+        <details class="launcher">
+            <summary class="iconbtn" aria-label="Peluncur modul">@include('presensi._icon', ['name' => 'grid', 'size' => 20])</summary>
+            <div class="launcher-panel">
+                <h4>{{ $moduleTitle }}</h4>
+                <ul>
+                    @foreach ($moduleItems as $item)
+                        <li><a href="{{ in_array($item, ['Presensi', 'Laporan Kehadiran'], true) ? $presensiUrl : '#' }}" class="{{ in_array($item, ['Presensi', 'Laporan Kehadiran'], true) ? 'on' : '' }}">{{ $item }}</a></li>
+                    @endforeach
+                </ul>
+                <div class="role">Masuk sebagai (sementara):
+                    <a href="{{ url('/presensi') }}">Mahasiswa</a><a href="{{ url('/presensi/dosen') }}">Dosen</a><a href="{{ url('/presensi/admin') }}">BAAK</a>
+                </div>
+            </div>
+        </details>
+        <a class="iconbtn" href="#" aria-label="Profil">@include('presensi._icon', ['name' => 'user', 'size' => 20])</a>
     </div>
 </header>
 
-<nav class="bg-white border-b border-slate-200">
-    <div class="max-w-6xl mx-auto px-6 flex gap-8 text-sm overflow-x-auto">
-        @foreach (['Dashboard', 'Academic Master & User Management', 'Kurikulum & KRS', 'Jadwal & Perkuliahan'] as $item)
-            <a href="#" class="py-4 text-slate-500 whitespace-nowrap hover:text-[#1b2d55]">{{ $item }}</a>
-        @endforeach
-        <a href="{{ route('presensi.index') }}" class="py-4 whitespace-nowrap font-semibold text-[#2f5aa8] border-b-2 border-[#2f5aa8]">Presensi</a>
-        <a href="#" class="py-4 text-slate-500 whitespace-nowrap hover:text-[#1b2d55]">Nilai & Transkrip</a>
-    </div>
-</nav>
+@yield('tabs')
 
-<main class="max-w-6xl w-full mx-auto px-6 py-8 flex-1">
-    @if (session('status'))
-        <div class="mb-4 rounded-lg bg-emerald-50 text-emerald-800 text-sm px-4 py-3" role="status">{{ session('status') }}</div>
-    @endif
-    @if (session('error'))
-        <div class="mb-4 rounded-lg bg-red-50 text-red-800 text-sm px-4 py-3" role="alert">{{ session('error') }}</div>
-    @endif
-    @if ($errors->any())
-        <div class="mb-4 rounded-lg bg-red-50 text-red-800 text-sm px-4 py-3" role="alert">{{ $errors->first() }}</div>
-    @endif
-
+<main class="container">
     @yield('content')
 </main>
-
-<footer class="max-w-6xl w-full mx-auto px-6 py-4 text-xs text-slate-500 flex justify-between">
-    <span>© 2026 Institut Teknologi Indonesia · SIA ITI</span>
-    <span>Modul Presensi (T4)</span>
-</footer>
 </body>
 </html>

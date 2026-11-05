@@ -1,111 +1,71 @@
-# Dokumentasi Pekerjaan T4 — Presensi
+# Dokumentasi T4 — Modul Presensi (Halaman)
 
-Referensi: SRS-SIA-00 (FR-008, BR-005/006/007, SEC-001/002) dan hasil diskusi T4 (3 Oktober 2026).
-Status: **frontend + route + logika awal dengan data dummy**. Belum terhubung ke DB/auth (menunggu T1–T3).
+Referensi: SRS-SIA-T4 v1.1 (revisi notulen PTI), S2D Presensi Mahasiswa, 00 Foundation (Gaya B).
+Status: **halaman + route + data dummy**. Logika absensi, QR, reminder, dan API belum dibuat (tahap berikutnya).
 
-## 1. Yang dikerjakan
+## 1. Ringkasan
 
-| # | Pekerjaan | File |
-|---|-----------|------|
-| 1 | Route modul presensi (dipisah supaya minim konflik merge; `web.php` hanya `require` 1 baris) | `routes/presensi.php`, `routes/web.php` |
-| 2 | Layout sementara (header navy, tab menu, flash message) mengikuti desain Dashboard | `resources/views/layouts/app.blade.php` |
-| 3 | Halaman Mahasiswa: rekap presensi per mata kuliah | `presensi/mahasiswa/index.blade.php` |
-| 4 | Halaman Mahasiswa: absen (tombol biasa + kode QR/token) | `presensi/mahasiswa/absen.blade.php` |
-| 5 | Halaman Dosen: daftar sesi hari ini | `presensi/dosen/index.blade.php` |
-| 6 | Halaman Dosen: kelola sesi (Mulai/Selesai kuliah, token QR, ubah status mahasiswa, reminder) | `presensi/dosen/sesi.blade.php` |
-| 7 | Halaman Dosen: rekap per mata kuliah | `presensi/dosen/rekap.blade.php` |
-| 8 | Halaman Admin: monitoring presensi | `presensi/admin/index.blade.php` |
-| 9 | Controller (Mahasiswa/Dosen/Admin) | `app/Http/Controllers/Presensi/*` |
-| 10 | Logika: rekap, aturan reminder, status, penyimpanan sementara | `app/Services/Presensi/*` |
-| 11 | Test case (unit + feature) | `tests/Unit/Presensi/*`, `tests/Feature/Presensi/*` |
+- Halaman dibuat mengikuti desain tim design (S2D Presensi Mahasiswa) dan panduan gaya 00 Foundation: top bar navy, aksi plum, font Poppins/Inter/IBM Plex Mono, radius 4/6/8, badge status sesuai "Pemetaan status".
+- Istilah mengikuti SRS T4 v1.1: **Meeting** (bukan Session), presensi dosen dua checkpoint, reminder 10 menit **sebelum** kelas berakhir (tanpa snooze), presensi mandiri hanya saat kelas berlangsung, setelah kelas berakhir hanya manual oleh dosen.
+- Data masih dummy di `config/t4dummy.php`. Tidak ada controller, service, atau database.
 
-## 2. Daftar route
+## 2. Route (gaya `Route::get(..., function () { return view(...); })` di `routes/web.php`)
 
-| Method | URL | Nama | Fungsi |
+| URL | View | Pengguna | Keterangan |
 |---|---|---|---|
-| GET | `/presensi` | `presensi.index` | redirect ke halaman mahasiswa |
-| GET | `/presensi/mahasiswa` | `presensi.mahasiswa.index` | rekap presensi mahasiswa |
-| GET | `/presensi/mahasiswa/absen` | `presensi.mahasiswa.absen` | halaman absen |
-| POST | `/presensi/mahasiswa/absen/{session}` | `presensi.mahasiswa.absen.store` | submit absen (`method`: button/qr) |
-| GET | `/presensi/dosen` | `presensi.dosen.index` | sesi hari ini |
-| GET | `/presensi/dosen/rekap` | `presensi.dosen.rekap` | rekap per mata kuliah |
-| GET | `/presensi/dosen/sesi/{session}` | `presensi.dosen.sesi` | kelola sesi |
-| POST | `/presensi/dosen/sesi/{session}/mulai` | `presensi.dosen.sesi.mulai` | cek 1: mulai kuliah |
-| POST | `/presensi/dosen/sesi/{session}/selesai` | `presensi.dosen.sesi.selesai` | cek 2: selesai kuliah |
-| POST | `/presensi/dosen/sesi/{session}/tunda` | `presensi.dosen.sesi.tunda` | "Ingatkan nanti" |
-| GET | `/presensi/dosen/sesi/{session}/reminder` | `presensi.dosen.sesi.reminder` | JSON `{remind: bool}` (dipolling 30 detik) |
-| POST | `/presensi/dosen/sesi/{session}/mahasiswa/{nim}` | `presensi.dosen.sesi.mark` | ubah status mahasiswa |
-| GET | `/presensi/admin` | `presensi.admin.index` | monitoring |
+| `/presensi` | `presensi.index` | Mahasiswa | Kelas hari ini + riwayat per mata kuliah |
+| `/presensi/riwayat` | `presensi.riwayat` | Mahasiswa | Riwayat kehadiran per pertemuan (IF201) |
+| `/presensi/dosen` | `presensi.dosen.index` | Dosen | Kelas hari ini (daftar Meeting) |
+| `/presensi/dosen/meeting` | `presensi.dosen.meeting` | Dosen | Kelola Meeting: checkpoint, pintu absensi, presensi manual, pop-up reminder |
+| `/presensi/dosen/rekap` | `presensi.dosen.rekap` | Dosen | Rekap mata kuliah + rata-rata |
+| `/presensi/admin` | `presensi.admin.index` | BAAK/Prodi | Laporan kehadiran (hanya baca) |
 
-## 3. Aturan yang diimplementasikan
+Pratinjau status layar lewat query `?state=`:
+- `/presensi?state=` normal · berlangsung · alpa · kosong · loading · error
+- `/presensi/dosen/meeting?state=` belum · berlangsung · berakhir (pop-up reminder dibuka lewat tombol "Pratinjau pop-up reminder", atau tambahkan `?reminder=1`)
+- Strip "Pratinjau status layar" dan menu "Masuk sebagai (sementara)" hanya untuk review; hapus saat data nyata terhubung.
 
-- Absen mahasiswa hanya bisa saat sesi `berlangsung` (dosen sudah menekan Mulai Kuliah).
-- Absen QR wajib token yang cocok (tidak case-sensitive); satu mahasiswa hanya bisa absen sekali per sesi.
-- Dosen bisa mengubah status (Hadir/Sakit/Izin/Alpa) kapan saja, termasuk setelah kuliah selesai.
-- Reminder muncul **10 menit setelah jam kuliah berakhir** sampai dosen menekan "Selesaikan Kuliah"; "Ingatkan nanti" menunda 5 menit.
-- Rekap memakai key `attendedSessions`, `sickSessions`, `absentSessions`, `permissionSessions`, `totalPercentage`.
-- Persentase mata kuliah (dosen) = rata-rata `totalPercentage` seluruh mahasiswa.
+## 3. Pemetaan desain/SRS ke halaman
 
-## 4. Asumsi sementara (perlu konfirmasi)
+| Kebutuhan | Halaman |
+|---|---|
+| US-T4-006 rekap mahasiswa (FR-T4-006) | `/presensi`, `/presensi/riwayat` |
+| FR-T4-007 / SR-T4-007 rata-rata mata kuliah | `/presensi/dosen/rekap`, `/presensi/admin` |
+| FR-T4-001 Meeting | `/presensi/dosen`, `/presensi/dosen/meeting` |
+| FR-T4-002 / SR-T4-001 dua checkpoint | kartu "Presensi dosen" di halaman Meeting |
+| FR-T4-003 / SR-T4-002 reminder 10 menit sebelum akhir | modal pada halaman Meeting |
+| FR-T4-004 / SR-T4-003/004 presensi mandiri | kartu "Pintu absensi" (QR/Button), tutup otomatis saat berakhir |
+| FR-T4-005, FR-T4-008 presensi manual + audit | tabel "Presensi mahasiswa" (kolom Catat/koreksi) |
 
-1. `totalPercentage` = Hadir / total pertemuan tercatat (Sakit & Izin tidak dihitung hadir).
-2. Saat kuliah diselesaikan, mahasiswa yang belum absen otomatis **Alpa**.
-3. Snooze = 5 menit; batas kehadiran rendah = 75%.
-4. Data mahasiswa/jadwal/mata kuliah dummy; mahasiswa login dianggap `115240001`.
+## 4. Daftar file ditambah dan diubah (dibanding branch `feature/laravel-setup`)
 
-## 5. TODO saat modul lain siap
+Diubah (1): `routes/web.php`
 
-- Ganti `AttendanceStore` dengan model/tabel nyata (+ migration) dan API sesi per mata kuliah (usulan T4).
-- Pasang middleware auth + role (SEC-001/002) pada tiap grup route di `routes/presensi.php`.
-- Render QR sungguhan (mis. package `simplesoftwareio/simple-qrcode`) dan buat token kedaluwarsa.
-- Ganti layout sementara dengan layout bersama bila sudah ada; hapus `_tabs.blade.php` (tab per peran).
+Ditambah (18):
+- Style: `public/css/sia-t4.css`
+- Data dummy: `config/t4dummy.php`
+- Helper: `app/Support/PresensiFormat.php`
+- Layout: `resources/views/layouts/app.blade.php`
+- Partial: `resources/views/presensi/_badge.blade.php`, `_icon.blade.php`, `_devstates.blade.php`, `_tabs.blade.php`
+- Halaman: `resources/views/presensi/index.blade.php`, `riwayat.blade.php`, `dosen/index.blade.php`, `dosen/meeting.blade.php`, `dosen/rekap.blade.php`, `admin/index.blade.php`
+- Test: `tests/Unit/Presensi/PresensiFormatTest.php`, `tests/Feature/Presensi/HalamanPresensiTest.php`
+- Dokumentasi: `docs/T4-presensi.md`, `docs/T4-arsitektur.md`
 
-## 6. Menjalankan test
+Dihapus dibanding commit sebelumnya di branch `feature/t4-presensi` (versi awal dengan controller/session):
+`app/Http/Controllers/Presensi/*` (3), `app/Services/Presensi/*` (4), `routes/presensi.php`, semua view lama di `resources/views/presensi/`, `tests/Unit/Presensi/*` lama (2), `tests/Feature/Presensi/*` lama (3).
+
+## 5. Test
 
 ```bash
-composer install
 php artisan test --filter=Presensi
 ```
+- Unit `PresensiFormatTest` (6): rumus persen, format Indonesia, ambang, rata-rata, pemetaan tone.
+- Feature `HalamanPresensiTest` (12): semua halaman render, setiap state layar mahasiswa, tidak ada tombol absen di web mahasiswa, Meeting berlangsung/berakhir, rekap.
 
-Test case: perhitungan rekap (4), aturan reminder (4), route/halaman (3), absen mahasiswa (5), kontrol sesi dosen (6).
+## 6. Open issue / catatan untuk tim
 
-## 7. Daftar file yang ditambah dan diubah
-
-### Diubah (1 file)
-- `routes/web.php` — hanya menambah 1 baris `require __DIR__.'/presensi.php';`
-
-### Ditambah (23 file)
-Route:
-- `routes/presensi.php`
-
-Controller:
-- `app/Http/Controllers/Presensi/MahasiswaPresensiController.php`
-- `app/Http/Controllers/Presensi/DosenPresensiController.php`
-- `app/Http/Controllers/Presensi/AdminPresensiController.php`
-
-Service / logika:
-- `app/Services/Presensi/AttendanceStatus.php`
-- `app/Services/Presensi/AttendanceStore.php`
-- `app/Services/Presensi/RecapCalculator.php`
-- `app/Services/Presensi/ReminderPolicy.php`
-
-View:
-- `resources/views/layouts/app.blade.php`
-- `resources/views/presensi/_tabs.blade.php`
-- `resources/views/presensi/_badge.blade.php`
-- `resources/views/presensi/mahasiswa/index.blade.php`
-- `resources/views/presensi/mahasiswa/absen.blade.php`
-- `resources/views/presensi/dosen/index.blade.php`
-- `resources/views/presensi/dosen/sesi.blade.php`
-- `resources/views/presensi/dosen/rekap.blade.php`
-- `resources/views/presensi/admin/index.blade.php`
-
-Test:
-- `tests/Unit/Presensi/RecapCalculatorTest.php`
-- `tests/Unit/Presensi/ReminderPolicyTest.php`
-- `tests/Feature/Presensi/PresensiRouteTest.php`
-- `tests/Feature/Presensi/MahasiswaAbsenTest.php`
-- `tests/Feature/Presensi/DosenSesiTest.php`
-
-Dokumentasi:
-- `docs/T4-presensi.md` (file ini)
+1. **Desain vs SRS**: desain mahasiswa web tidak punya tombol presensi ("presensi dicatat dosen", QR di aplikasi mobile nanti), sedangkan FR-T4-004 menyebut mahasiswa presensi QR/Button. Web mengikuti desain; alur QR/Button mahasiswa dibuat di tahap berikutnya.
+2. **Kontrak API berbeda**: desain memakai `GET /attendances/summary` (+ `isEligibleForExam`); SRS memakai `/api/v1/attendance/recap/student/{id}` dan `/api/v1/meetings/...`. Perlu disepakati dengan T7. Riwayat per pertemuan dan "kelas hari ini" belum ada di kontrak.
+3. Ambang syarat ujian (75%) hanyalah placeholder, perlakuan sakit/izin belum diputuskan (SRS bagian 7.3 no. 3).
+4. Ikon sementara SVG sederhana; panduan memakai Phosphor Regular 16/20.
+5. Font dimuat dari Google Fonts; jika offline akan memakai font bawaan sistem.
