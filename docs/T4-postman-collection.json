@@ -1,0 +1,929 @@
+{
+  "info": {
+    "name": "SIA ITI - API Presensi Tim 4",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "1) Isi variabel devPassword (password yang tampil saat db:seed). 2) Jalankan folder \"0. Login\" dulu. 3) Jalankan request lain. ID seed ada di docs/T4-api.md."
+  },
+  "item": [
+    {
+      "name": "0. Login (isi token otomatis)",
+      "item": [
+        {
+          "name": "Login Dosen 1 (DSN001)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"DSN001\",\n  \"password\": \"{{devPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"login ok\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"tokenDosen1\", pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Dosen 2 (DSN002)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"DSN002\",\n  \"password\": \"{{devPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"login ok\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"tokenDosen2\", pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Mahasiswa 1 (11520001)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"11520001\",\n  \"password\": \"{{devPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"login ok\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"tokenMhs1\", pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Mahasiswa 2 (11520002)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"11520002\",\n  \"password\": \"{{devPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"login ok\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"tokenMhs2\", pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Kaprodi (KPR001)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"KPR001\",\n  \"password\": \"{{devPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"login ok\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"tokenKaprodi\", pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Endpoint Tim 4",
+      "item": [
+        {
+          "name": "1. POST /meetings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/meetings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "meetings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"crs_00000000-0000-4000-8000-000000000001\",\n  \"startTime\": \"2026-12-01T01:00:00Z\",\n  \"endTime\": \"2026-12-01T03:30:00Z\",\n  \"scheduleId\": \"sch_001\",\n  \"topic\": \"Pengenalan Arsitektur Perangkat Lunak\",\n  \"attendanceMethod\": \"BOTH\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 403, 404, 422]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. PATCH /meetings/{meetingId}/attendance",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/meetings/{{meetingId}}/attendance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "meetings",
+                "{{meetingId}}",
+                "attendance"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendanceOpen\": true,\n  \"attendanceMethod\": \"BOTH\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 422]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. POST /meetings/{meetingId}/start",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/meetings/{{meetingId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "meetings",
+                "{{meetingId}}",
+                "start"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 422]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. POST /meetings/{meetingId}/end",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/meetings/{{meetingId}}/end",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "meetings",
+                "{{meetingId}}",
+                "end"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 422]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. GET /meetings/{meetingId}/lecturer-attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/meetings/{{meetingId}}/lecturer-attendance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "meetings",
+                "{{meetingId}}",
+                "lecturer-attendance"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. GET /meetings/{meetingId}/qr",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/meetings/{{meetingId}}/qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "meetings",
+                "{{meetingId}}",
+                "qr"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 422]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7. POST /attendance/submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "submit"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenMhs1}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meetingId\": \"mtg_00000000-0000-4000-8000-000000000001\",\n  \"method\": \"BUTTON\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 403, 404, 422]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8. POST /meetings/{meetingId}/attendance/manual",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/meetings/{{meetingId}}/attendance/manual",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "meetings",
+                "{{meetingId}}",
+                "attendance",
+                "manual"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"std_00000000-0000-4000-8000-000000000001\",\n  \"status\": \"ATTENDED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401, 403, 404, 422]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9. PUT /attendance/{attendanceId}/correction",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/{{attendanceId}}/correction",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "{{attendanceId}}",
+                "correction"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SICK\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 422]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10. GET /attendance/recap/student/{studentId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/recap/student/{{studentId}}?",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "recap",
+                "student",
+                "{{studentId}}"
+              ],
+              "query": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenMhs1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11. GET /attendance/recap/course/{courseId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/recap/course/{{courseId}}?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "recap",
+                "course",
+                "{{courseId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tambahan: GET /meetings/{meetingId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/meetings/{{meetingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "meetings",
+                "{{meetingId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDosen1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tambahan: GET /attendances/summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendances/summary?studentId=std_00000000-0000-4000-8000-000000000001&classOfferingId=crs_00000000-0000-4000-8000-000000000001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendances",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "studentId",
+                  "value": "std_00000000-0000-4000-8000-000000000001"
+                },
+                {
+                  "key": "classOfferingId",
+                  "value": "crs_00000000-0000-4000-8000-000000000001"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenMhs1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200 (atau sesuai skenario uji)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404]); });",
+                  "pm.test(\"envelope standar\", function () { const j = pm.response.json(); pm.expect(j).to.have.property(\"success\"); pm.expect(j).to.have.property(\"code\"); pm.expect(j).to.have.property(\"message\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1"
+    },
+    {
+      "key": "devPassword",
+      "value": ""
+    },
+    {
+      "key": "meetingId",
+      "value": "mtg_00000000-0000-4000-8000-000000000001"
+    },
+    {
+      "key": "attendanceId",
+      "value": "att_00000000-0000-4000-8000-000000000001"
+    },
+    {
+      "key": "studentId",
+      "value": "std_00000000-0000-4000-8000-000000000001"
+    },
+    {
+      "key": "courseId",
+      "value": "crs_00000000-0000-4000-8000-000000000001"
+    },
+    {
+      "key": "tokenDosen1",
+      "value": ""
+    },
+    {
+      "key": "tokenDosen2",
+      "value": ""
+    },
+    {
+      "key": "tokenMhs1",
+      "value": ""
+    },
+    {
+      "key": "tokenMhs2",
+      "value": ""
+    },
+    {
+      "key": "tokenKaprodi",
+      "value": ""
+    }
+  ]
+}

@@ -1,0 +1,907 @@
+openapi: 3.0.3
+info:
+  title: SIA ITI - API Presensi (Tim 4)
+  version: 1.0.0
+  description: 'Kontrak API modul Presensi. Envelope: success, code, message, data, meta (sukses) dan success, code, message, error{type,code,details} (gagal). Waktu ISO 8601 UTC.'
+servers:
+- url: http://localhost:8000/api/v1
+  description: Local
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Success:
+      type: object
+      required:
+      - success
+      - code
+      - message
+      - data
+      - meta
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+        data:
+          nullable: true
+        meta:
+          nullable: true
+          type: object
+    Error:
+      type: object
+      required:
+      - success
+      - code
+      - message
+      - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        code:
+          type: integer
+          example: 422
+        message:
+          type: string
+        error:
+          type: object
+          required:
+          - type
+          - code
+          - details
+          properties:
+            type:
+              type: string
+              example: BUSINESS_RULE_VIOLATION
+            code:
+              type: string
+              example: QR_EXPIRED
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+    Meeting:
+      type: object
+      properties:
+        meetingId:
+          type: string
+        courseId:
+          type: string
+        scheduleId:
+          type: string
+          nullable: true
+        meetingNumber:
+          type: integer
+        topic:
+          type: string
+          nullable: true
+        lecturerId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ENDED
+        attendanceOpen:
+          type: boolean
+        attendanceMethod:
+          type: string
+          enum:
+          - QR
+          - BUTTON
+          - BOTH
+    LecturerAttendance:
+      type: object
+      properties:
+        lecturerAttendanceId:
+          type: string
+        meetingId:
+          type: string
+        lecturerId:
+          type: string
+        isPresentAtStart:
+          type: boolean
+        isPresentAtEnd:
+          type: boolean
+        isPresent:
+          type: boolean
+          description: 'Turunan: start AND end. Tidak bisa diubah langsung.'
+        reminderSent:
+          type: boolean
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+    Attendance:
+      type: object
+      properties:
+        attendanceId:
+          type: string
+        meetingId:
+          type: string
+        studentId:
+          type: string
+        status:
+          type: string
+          enum:
+          - ATTENDED
+          - SICK
+          - ABSENT
+          - PERMISSION
+        method:
+          type: string
+          enum:
+          - QR
+          - BUTTON
+          - MANUAL
+        timestamp:
+          type: string
+          format: date-time
+        confirmedBy:
+          type: string
+          nullable: true
+    RecapRow:
+      type: object
+      properties:
+        totalSessions:
+          type: integer
+        attendedDetail:
+          type: object
+          properties:
+            attendedSessions:
+              type: integer
+            sickSessions:
+              type: integer
+            absentSessions:
+              type: integer
+            permissionSessions:
+              type: integer
+        totalPercentage:
+          type: number
+        isEligibleForExam:
+          type: boolean
+security:
+- bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      summary: Login (stand-in Auth Tim 1, hanya untuk pengujian)
+      description: 'Role: Publik (stand-in Tim 1)'
+      tags:
+      - Auth (stand-in)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+            example:
+              username: DSN001
+              password: <T4_DEV_PASSWORD>
+  /meetings:
+    post:
+      summary: Buat Meeting baru
+      description: 'Role: LECTURER'
+      tags:
+      - Presensi (T4)
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+            example:
+              courseId: crs_00000000-0000-4000-8000-000000000001
+              startTime: '2026-12-01T01:00:00Z'
+              endTime: '2026-12-01T03:30:00Z'
+              scheduleId: sch_001
+              topic: Pengenalan Arsitektur Perangkat Lunak
+              attendanceMethod: BOTH
+  /meetings/{meetingId}/attendance:
+    patch:
+      summary: Atur pintu absensi (buka/tutup, metode QR|BUTTON|BOTH)
+      description: 'Role: LECTURER (pengampu)'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: meetingId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: mtg_00000000-0000-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+            example:
+              attendanceOpen: true
+              attendanceMethod: BOTH
+  /meetings/{meetingId}/start:
+    post:
+      summary: 'Checkpoint 1: dosen memulai kelas'
+      description: 'Role: LECTURER (pengampu)'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: meetingId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: mtg_00000000-0000-4000-8000-000000000001
+  /meetings/{meetingId}/end:
+    post:
+      summary: 'Checkpoint 2: dosen mengakhiri kelas'
+      description: 'Role: LECTURER (pengampu)'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: meetingId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: mtg_00000000-0000-4000-8000-000000000001
+  /meetings/{meetingId}/lecturer-attendance:
+    get:
+      summary: Lihat presensi dosen (dua checkpoint)
+      description: 'Role: LECTURER (pengampu), KAPRODI, ADMIN_ACADEMIC'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: meetingId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: mtg_00000000-0000-4000-8000-000000000001
+  /meetings/{meetingId}/qr:
+    get:
+      summary: Ambil token QR dinamis (berganti tiap 30 detik)
+      description: 'Role: LECTURER (pengampu)'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: meetingId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: mtg_00000000-0000-4000-8000-000000000001
+  /attendance/submit:
+    post:
+      summary: Presensi mandiri mahasiswa (QR atau BUTTON)
+      description: 'Role: STUDENT'
+      tags:
+      - Presensi (T4)
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+            example:
+              meetingId: mtg_00000000-0000-4000-8000-000000000001
+              method: BUTTON
+  /meetings/{meetingId}/attendance/manual:
+    post:
+      summary: Presensi manual oleh dosen (201 bila baru, 200 bila memperbarui)
+      description: 'Role: LECTURER (pengampu)'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: meetingId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: mtg_00000000-0000-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+            example:
+              studentId: std_00000000-0000-4000-8000-000000000001
+              status: ATTENDED
+  /attendance/{attendanceId}/correction:
+    put:
+      summary: Koreksi status presensi + audit
+      description: 'Role: LECTURER (pengampu)'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: attendanceId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: att_00000000-0000-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+            example:
+              status: SICK
+  /attendance/recap/student/{studentId}:
+    get:
+      summary: Rekap kehadiran satu mahasiswa per mata kuliah
+      description: 'Role: STUDENT (milik sendiri), LECTURER'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: studentId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: std_00000000-0000-4000-8000-000000000001
+      - name: courseId
+        in: query
+        required: false
+        schema:
+          type: string
+        example: (opsional)
+  /attendance/recap/course/{courseId}:
+    get:
+      summary: Rekap kehadiran satu mata kuliah + rata-rata
+      description: 'Role: LECTURER (pengampu), KAPRODI, ADMIN_ACADEMIC'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: crs_00000000-0000-4000-8000-000000000001
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: string
+        example: '1'
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: string
+        example: '10'
+  /meetings/{meetingId}:
+    get:
+      summary: (Tambahan) Lihat detail Meeting
+      description: 'Role: LECTURER (pengampu), KAPRODI, ADMIN_ACADEMIC'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: meetingId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: mtg_00000000-0000-4000-8000-000000000001
+  /attendances/summary:
+    get:
+      summary: (Tambahan, kompatibel SIA-API-INT v1.1 6.4) Rekap untuk T5
+      description: 'Role: STUDENT (milik sendiri), LECTURER, KAPRODI, ADMIN_ACADEMIC'
+      tags:
+      - Presensi (T4)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: studentId
+        in: query
+        required: true
+        schema:
+          type: string
+        example: std_00000000-0000-4000-8000-000000000001
+      - name: classOfferingId
+        in: query
+        required: true
+        schema:
+          type: string
+        example: crs_00000000-0000-4000-8000-000000000001
